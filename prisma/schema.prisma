@@ -26,13 +26,24 @@ model User {
   @@map("users")
 }
 
+enum Recurrence {
+  MONTHLY
+  DAILY
+}
+
 model Subscription {
   id        Int      @id @default(autoincrement())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  price Float
+
   userId Int
   user   User @relation(fields: [userId], references: [id])
+
+  recurrence Recurrence @default(MONTHLY)
+  renewedAt  DateTime?
+  endAt      DateTime?
 
   @@map("subscriptions")
 }
