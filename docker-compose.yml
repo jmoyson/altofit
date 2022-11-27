@@ -5,9 +5,9 @@ services:
   postgres:
     image: postgres
     environment:
-      POSTGRES_USER: alto_admin
+      POSTGRES_USER: alto_user
       POSTGRES_PASSWORD: alto_password
-      POSTGRES_DB: alto
+      POSTGRES_DB: alto_db
     ports:
       - '5432:5432'
 
