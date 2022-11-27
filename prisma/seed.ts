@@ -59,7 +59,50 @@ async function main() {
     },
   });
 
-  console.log({ user1, user2, user3, user4, user5 });
+  const subscription1User1 = await prisma.subscription.upsert({
+    where: { id: 1 },
+    update: {},
+    create: {
+      userId: user1.id,
+      price: 39.99,
+    },
+  });
+
+  // Add a subscription that should renew
+  const today = new Date();
+  const yesterday = new Date(today.setDate(today.getDate() - 1));
+  const aMonthAndADayAgo = new Date(
+    yesterday.setMonth(yesterday.getMonth() - 1),
+  );
+  const subscription1User2 = await prisma.subscription.upsert({
+    where: { id: 2 },
+    update: {},
+    create: {
+      createdAt: aMonthAndADayAgo,
+      userId: user2.id,
+      price: 39.99,
+    },
+  });
+
+  const subscription1User3 = await prisma.subscription.upsert({
+    where: { id: 3 },
+    update: {},
+    create: {
+      userId: user3.id,
+      price: 39.99,
+    },
+  });
+
+  console.log({
+    user1,
+    user2,
+    user3,
+    user4,
+    user5,
+    subscription1User1,
+    subscription1User2,
+    subscription1User3,
+  });
 }
 
 // execute the main function

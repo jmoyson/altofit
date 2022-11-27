@@ -22,6 +22,7 @@ model User {
   lastName  String?
 
   subscriptions Subscription[]
+  invoices      Invoice[]
 
   @@map("users")
 }
@@ -45,5 +46,25 @@ model Subscription {
   renewedAt  DateTime?
   endAt      DateTime?
 
+  invoices Invoice[]
+
   @@map("subscriptions")
+}
+
+model Invoice {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+
+  subscriptionId Int
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id])
+
+  amount Float
+
+  paidAt DateTime?
+
+  @@map("invoices")
 }

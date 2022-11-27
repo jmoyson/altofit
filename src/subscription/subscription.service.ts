@@ -1,10 +1,15 @@
 import { ForbiddenException, Injectable } from '@nestjs/common';
-import { Recurrence } from '@prisma/client';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { Invoice, Recurrence } from '@prisma/client';
+import { InvoiceService } from 'src/invoice/invoice.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
-export class SubscriptionsService {
-  constructor(private prisma: PrismaService) {}
+export class SubscriptionService {
+  constructor(
+    private prisma: PrismaService,
+    private invoiceService: InvoiceService,
+  ) {}
 
   async subscribe(userId: number) {
     // Get current subscription
@@ -86,5 +91,57 @@ export class SubscriptionsService {
         OR: [{ endAt: null }, { endAt: { gt: new Date() } }],
       },
     });
+  }
+
+  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+  async renewSubscriptions() {
+    // Get all subscription that need to be renew
+    // For MONTHLY, Subscriptions that need to be renewed are either
+    // - Subscription that have no renewedAt and createdAt are more than one month away from today
+    // - Subscription that have a renewed date at more than one month away from today
+    const today = new Date();
+    const oneMonthAgo = new Date(today.setMonth(today.getMonth() - 1));
+    const subscriptions = await this.prisma.subscription.findMany({
+      where: {
+        OR: [
+          { AND: { renewedAt: null, createdAt: { lt: oneMonthAgo } } },
+          { renewedAt: { lt: oneMonthAgo } },
+        ],
+      },
+    });
+    console.log('Subscription to renew...', subscriptions);
+
+    const invoices = await Promise.all(
+      subscriptions.map(async (s): Promise<Invoice> => {
+        // Set the renew date
+        await this.prisma.subscription.update({
+          where: { id: s.id },
+          data: {
+            renewedAt: today,
+          },
+        });
+
+        // Create the invoice
+        const invoice = await this.invoiceService.create(s);
+        // Simulate the paiement
+        await this.invoiceService.simulatePaiment(invoice.id);
+        return invoice;
+      }),
+    );
+    console.log('Invoices of renewed Subscription', invoices);
+  }
+
+  async calcCurrentMRR() {
+    // We use raw qurey to do the sum instead of retreiving all subscriptions...
+
+    // Do the sum of all the subscription.price that are active (no endDate)
+    // use EXPLAIN ANALYZE  to calculate execution time.
+    const res = await this.prisma.$queryRaw`
+      SELECT SUM (price) AS total
+      FROM subscriptions
+      WHERE 'endAt' IS NOT NULL OR 'endAt' > ${new Date().toISOString()}
+    `;
+    console.log(res);
+    return res[0].total;
   }
 }

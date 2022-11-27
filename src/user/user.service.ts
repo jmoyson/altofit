@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { SubscriptionsService } from 'src/subscription/subscription.service';
+import { SubscriptionService } from 'src/subscription/subscription.service';
 
 @Injectable()
 export class UserService {
   constructor(
     private prisma: PrismaService,
-    private subscriptionService: SubscriptionsService,
+    private subscriptionService: SubscriptionService,
   ) {}
 
   async subscribe(userId: number) {
